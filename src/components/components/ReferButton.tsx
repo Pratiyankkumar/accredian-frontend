@@ -114,11 +114,36 @@ export default function ReferButton(): JSX.Element {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (): void => {
-    if (validateForm()) {
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  const handleSubmit = async (): Promise<void> => {
+    if (!validateForm()) return;
+
+    setIsLoading(true); // Start loading
+
+    try {
       console.log("Referral Form Data:", formData);
+
+      const response = await fetch(
+        "https://accredian-backend-8v0z.onrender.com/api/referral",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formData),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const res = await response.json();
+      console.log(res);
+
       setOpen(false);
-      // Reset form
+      // Reset form after successful submission
       setFormData({
         referrerName: "",
         referrerEmail: "",
@@ -131,6 +156,11 @@ export default function ReferButton(): JSX.Element {
         relationshipToReferee: "",
         message: "",
       });
+    } catch (error) {
+      console.error("Error submitting referral form:", error);
+      alert("Failed to submit the referral form. Please try again later.");
+    } finally {
+      setIsLoading(false); // Stop loading
     }
   };
 
@@ -145,7 +175,7 @@ export default function ReferButton(): JSX.Element {
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-[500px] bp4:h-[90vh] h-[100vh] overflow-y-scroll">
+        <DialogContent className="sm:max-w-[500px] bp4:h-[90vh] h-[90vh] overflow-y-scroll">
           <DialogHeader>
             <DialogTitle>Refer Someone</DialogTitle>
             <DialogDescription>
@@ -345,7 +375,7 @@ export default function ReferButton(): JSX.Element {
               onClick={handleSubmit}
               className="bg-[#1A73E8] hover:bg-[#1557B0]"
             >
-              Submit Referral
+              {isLoading ? "Submitting.." : "Submit Referral"}
             </Button>
           </DialogFooter>
         </DialogContent>
